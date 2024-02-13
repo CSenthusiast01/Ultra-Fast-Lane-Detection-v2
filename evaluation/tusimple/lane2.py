@@ -36,7 +36,7 @@ class LaneEval(object):
         line_accs = []
         fp, fn, tp, tn = 0., 0., 0., 0.
         matched = 0.
-        for x_gts, thresh, x_preds in zip(gt, threshs, pred):
+        for x_gts, thresh in zip(gt, threshs):
             accs = [LaneEval.line_accuracy(np.array(x_preds), np.array(x_gts), thresh) for x_preds in pred]
             max_acc = np.max(accs) if len(accs) > 0 else 0.
             if max_acc < LaneEval.pt_thresh:
@@ -44,16 +44,15 @@ class LaneEval(object):
             else:
                 matched += 1
                 tp += 1
-                # experimental code:
-                tn += np.sum((np.array(x_preds) < 0) & (np.array(x_gts) < 0))/10 
             line_accs.append(max_acc)
         fp = len(pred) - matched
         if len(gt) > 4 and fn > 0:
             fn -= 1
+        tn = 4 - (tp + fp + fn)
         s = sum(line_accs)
         if len(gt) > 4:
             s -= min(line_accs)
-        return s / max(min(4.0, len(gt)), 1.), fp / len(pred) if len(pred) > 0 else 0., fn / max(min(len(gt), 4.) , 1.), tp/len(pred), tn/len(pred)
+        return s / max(min(4.0, len(gt)), 1.), fp / len(pred) if len(pred) > 0 else 0., fn / max(min(len(gt), 4.) , 1.), tp/len(pred), tn
 
     @staticmethod
     def bench_one_submit(pred_file, gt_file):
@@ -98,8 +97,8 @@ class LaneEval(object):
             {'name': 'Accuracy', 'value': accuracy / num, 'order': 'desc'},
             {'name': 'FP', 'value': fp / num, 'order': 'asc'},
             {'name': 'FN', 'value': fn / num, 'order': 'asc'},
-            {'name': 'TP', 'value': tp / num, 'order': 'desc'},
-            {'name': 'TN', 'value': tn / num, 'order': 'desc'},
+            {'name': 'tp', 'value': tp / num, 'order': 'desc'},
+            {'name': 'tn', 'value': tn / num, 'order': 'desc'},
             {'name': 'F1', 'value': f1, 'order': 'asc'},
             {'name': 'Precision', 'value': pr, 'order':'asc'},
             {'name': 'Recall', 'value':re, 'order':'asc'}
